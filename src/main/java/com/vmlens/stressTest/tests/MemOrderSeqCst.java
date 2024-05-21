@@ -17,13 +17,13 @@ import java.util.function.Consumer;
 @Outcome(id = "2", expect = Expect.ACCEPTABLE, desc = "Only the result write is seen.")
 @Outcome(id = "0", expect = Expect.FORBIDDEN, desc = "Neither increment is seen.")
 @State
-public class MemOrder {
+public class MemOrderSeqCst {
 
     private final AtomicInteger counter = new AtomicInteger();
     private final Consumer<Object> incrFunc = ret -> counter.incrementAndGet();
 
     private volatile Object result = null;
-    private Consumer<Object> listener = null;
+    private volatile Consumer<Object> listener = null;
 
     @Actor
     public void actor1() {
