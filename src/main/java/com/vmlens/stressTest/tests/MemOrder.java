@@ -13,9 +13,9 @@ import java.util.function.Consumer;
 
 @SuppressWarnings({"unused", "java:S2187"})
 @JCStressTest
-@Outcome(id = "1", expect = Expect.ACCEPTABLE, desc = "Both increments are seen.")
-@Outcome(id = "2", expect = Expect.ACCEPTABLE, desc = "Only the result write is seen.")
 @Outcome(id = "0", expect = Expect.FORBIDDEN, desc = "Neither increment is seen.")
+@Outcome(id = "1", expect = Expect.ACCEPTABLE, desc = "Only one write is seen.")
+@Outcome(id = "2", expect = Expect.ACCEPTABLE, desc = "Both increments are seen.")
 @State
 public class MemOrder {
 
