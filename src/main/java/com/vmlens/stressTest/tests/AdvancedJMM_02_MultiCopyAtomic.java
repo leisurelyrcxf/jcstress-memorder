@@ -1,6 +1,4 @@
-package com.vmlens.stressTest.tests;
-
-/*
+package com.vmlens.stressTest.tests;/*
  * Copyright (c) 2016, 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -301,19 +299,54 @@ public class AdvancedJMM_02_MultiCopyAtomic {
 
         @Actor
         public void actor3(IIII_Result r) {
-            // x = 1
-            r.r1 = x; // 1
-            r.r2 = y; // 0
-            // y = 1
+            r.r1 = x;
+            r.r2 = y;
         }
 
         @Actor
         public void actor4(IIII_Result r) {
-            // y = 1;
-            r.r3 = y; // 1
-            r.r4 = x; // 0
-            // x = 1;
+            r.r3 = y;
+            r.r4 = x;
         }
+
+    }
+
+
+    @JCStressTest
+    @Outcome(id = "1, 0, 1, 0", expect = ACCEPTABLE_INTERESTING, desc = "Whoa")
+    @Outcome(                   expect = ACCEPTABLE,             desc = "Boring")
+    @State
+    public static class LoadLoadIRIWTest {
+
+        public int x;
+        public int y;
+
+        @Actor
+        public void actor1() {
+            x = 1;
+            UNSAFE.fullFence(); // "SeqCst" store
+        }
+
+        @Actor
+        public void actor2() {
+            y = 1;
+            UNSAFE.fullFence(); // "SeqCst" store
+        }
+
+        @Actor
+        public void actor3(IIII_Result r) {
+            r.r1 = x;
+            VarHandle.loadLoadFence();
+            r.r2 = y;
+        }
+
+        @Actor
+        public void actor4(IIII_Result r) {
+            r.r3 = y;
+            VarHandle.loadLoadFence();
+            r.r4 = x;
+        }
+
     }
 
 }

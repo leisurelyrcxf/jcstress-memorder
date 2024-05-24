@@ -44,7 +44,7 @@ public class MemOrderAcquireReleaseAdditionalFence {
         final Consumer<Object> localListener = incrFunc;
         LISTENER.setRelease(this, localListener);
 
-        VarHandle.releaseFence();
+        VarHandle.fullFence();
 
         final Object localResult = RESULT.getAcquire(this);
         if (localResult != null) {
@@ -57,7 +57,7 @@ public class MemOrderAcquireReleaseAdditionalFence {
         final Object localResult = this;
         RESULT.setRelease(this, localResult);
 
-        VarHandle.releaseFence();
+        VarHandle.storeStoreFence();
 
         @SuppressWarnings("unchecked")
         final Consumer<Object> localListener = (Consumer<Object>) LISTENER.getAcquire(this);
