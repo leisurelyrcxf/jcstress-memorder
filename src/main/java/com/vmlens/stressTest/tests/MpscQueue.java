@@ -73,6 +73,10 @@ public class MpscQueue {
             return true;
         }
 
+        public boolean getSafe() {
+            return safe.get();
+        }
+
         public void setSafe(boolean b) {
             safe.set(b);
         }
@@ -132,7 +136,7 @@ public class MpscQueue {
         }
 
         private boolean scheduleIfNeeded() {
-            if (hasOngoingConsumer.compareAndSetSafe(false, true)) {
+            if (!hasOngoingConsumer.getSafe() && hasOngoingConsumer.compareAndSetSafe(false, true)) {
                 executeInEventLoopThread(() -> {
                     if (hasOngoingConsumer.compareAndSetUnsafe(false, true)) {
                         loopSend();
