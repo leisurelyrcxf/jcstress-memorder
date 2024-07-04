@@ -29,21 +29,59 @@ import org.openjdk.jcstress.annotations.Arbiter;
 import org.openjdk.jcstress.annotations.JCStressTest;
 import org.openjdk.jcstress.annotations.Outcome;
 import org.openjdk.jcstress.annotations.State;
-import org.openjdk.jcstress.infra.results.II_Result;
 import org.openjdk.jcstress.infra.results.I_Result;
-import org.openjdk.jcstress.infra.results.L_Result;
 
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.VarHandle;
-import java.util.Queue;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.openjdk.jcstress.annotations.Expect.ACCEPTABLE;
 import static org.openjdk.jcstress.annotations.Expect.FORBIDDEN;
 
 public class MpscQueue {
+
+    public static class HasOngoingSendLoop {
+
+        final AtomicBoolean safe;
+
+        boolean unsafe;
+
+        public HasOngoingSendLoop() {
+            this(false);
+        }
+
+        private HasOngoingSendLoop(boolean b) {
+            safe = new AtomicBoolean(b);
+            unsafe = b;
+        }
+
+        public boolean compareAndSetSafe(boolean expectedValue, boolean newValue) {
+            return safe.compareAndSet(expectedValue, newValue);
+        }
+
+        /**
+         * This method is not thread safe, can only be used from single thread.
+         *
+         * @param expectedValue expected value
+         * @param newValue new value
+         * @return true if the value was updated
+         */
+        public boolean compareAndSetUnsafe(boolean expectedValue, boolean newValue) {
+            if (unsafe != expectedValue) {
+                return false;
+            }
+            unsafe = newValue;
+            return true;
+        }
+
+        public void setSafe(boolean b) {
+            safe.set(b);
+        }
+
+        public void setUnsafe(boolean b) {
+            unsafe = b;
+        }
+
+    }
 
 
     /*
@@ -56,39 +94,104 @@ public class MpscQueue {
 
      */
 
-    @SuppressWarnings("StatementWithEmptyBody")
     @JCStressTest
     @State
-    @Outcome(id = "1", expect = ACCEPTABLE, desc = "Boring")
-    @Outcome(          expect = FORBIDDEN,  desc = "Impossible")
+    @Outcome(id = "1", expect = ACCEPTABLE, desc = "Boring: queue empty")
+    @Outcome(expect = FORBIDDEN, desc = "Impossible: dangling element in the queue")
     public static class MpscQueueFirst {
 
-        public final MpscUnboundedAtomicArrayQueue<Integer> queue = new MpscUnboundedAtomicArrayQueue<>(256);; // new MpscUnboundedAtomicArrayQueue<>(256);
+        private static final int WORKER_COUNT = 4;
 
-        private volatile boolean hasOngoingConsumer = false;
-
-        /**
-         * Create var handle for hasOngoingConsumer
-         */
-        private static final VarHandle HAS_ONGOING_CONSUMER;
-        static {
-            try {
-                MethodHandles.Lookup l = MethodHandles.lookup();
-                HAS_ONGOING_CONSUMER = l.findVarHandle(MpscQueueFirst.class, "hasOngoingConsumer", boolean.class);
-            } catch (ReflectiveOperationException e) {
-                throw new ExceptionInInitializerError(e);
-            }
-        }
+        public final MpscUnboundedAtomicArrayQueue<Integer> queue = new MpscUnboundedAtomicArrayQueue<>(256);
 
         private final MpscUnboundedAtomicArrayQueue<Runnable> runnableQueue = new MpscUnboundedAtomicArrayQueue<>(256);
-        private void schedule(Runnable runnable) {
+
+        private void executeInEventLoopThread(Runnable runnable) {
             runnableQueue.offer(runnable);
         }
 
-        private final AtomicInteger workers = new AtomicInteger(3);
+        private final HasOngoingSendLoop hasOngoingConsumer = new HasOngoingSendLoop();
 
+        private final AtomicInteger workers = new AtomicInteger(WORKER_COUNT);
+
+        private void test(int j) {
+            try {
+                for (int i = 0; i < 1000; i++) {
+                    if (!offer(j * 1000 + i)) {
+                        return;
+                    }
+                }
+            } finally {
+                workers.decrementAndGet();
+            }
+        }
+
+        private boolean offer(int ele) {
+            queue.offer(ele);
+            return scheduleIfNeeded();
+        }
+
+        private boolean scheduleIfNeeded() {
+            if (hasOngoingConsumer.compareAndSetSafe(false, true)) {
+                executeInEventLoopThread(() -> {
+                    if (hasOngoingConsumer.compareAndSetUnsafe(false, true)) {
+                        loopSend();
+                    }
+                });
+                return true;
+            } else {
+                // Not possible to have a dangling task in the queue.
+                // 1. offer(ele) synchronize-before compareAndSetUnsafe(false, true)
+                // 2. compareAndSetUnsafe(false, true) synchronize-before hasOngoingConsumer.setSafe(false) in first loopSend0()
+                // 3. hasOngoingConsumer.setSafe(false) synchronize-before second loopSend0(), which will drain the queue.
+                return false;
+            }
+        }
+
+        private void loopSend() {
+            loopSend0(1, 1, true);
+        }
+
+        private void loopSend0(final int maxBatchSize, int remainingSpinCount, final boolean firstCall) {
+            do {
+                final int count = pollBatch(maxBatchSize);
+                if (count == 0 || (firstCall && count < maxBatchSize)) {
+                    // queue was empty
+                    break;
+                }
+            } while (--remainingSpinCount > 0);
+
+            if (remainingSpinCount <= 0) {
+                executeInEventLoopThread(this::loopSend);
+                return;
+            }
+
+            // QPSPattern is low and we have drained all tasks.
+            if (firstCall) {
+                // Don't setUnsafe here because loopSend0() may result in a delayed loopSend() call.
+                hasOngoingConsumer.setSafe(false);
+                // Guarantee thread-safety: no dangling tasks in the queue.
+                loopSend0(maxBatchSize, remainingSpinCount, false);
+            } else {
+                // In low qps pattern, the send job will be triggered later when a new task is added,
+                hasOngoingConsumer.setUnsafe(false);
+            }
+        }
+
+        private int pollBatch(final int maxBatchSize) {
+            int count = 0;
+            for (; count < maxBatchSize; count++) {
+                final Integer ele = queue.poll(); // relaxed poll is faster and we wil retry later anyway.
+                if (ele == null) {
+                    break;
+                }
+            }
+            return count;
+        }
+
+        // Single thread event loop
         @Actor
-        public void actor4() {
+        public void eventLoopThread() {
             while (true) {
                 Runnable runnable = runnableQueue.poll();
                 if (runnable != null) {
@@ -100,31 +203,6 @@ public class MpscQueue {
                     break;
                 }
             }
-        }
-        private void test(int j) {
-            try {
-                for (int i = 0; i < 1000; i++) {
-                    offer(j * 1000 + i);
-                }
-            } finally {
-                workers.decrementAndGet();
-            }
-        }
-
-        private void offer(int n) {
-            queue.offer(n);
-
-            if (!HAS_ONGOING_CONSUMER.compareAndSet(this, false, true)) {
-                return;
-            }
-
-            schedule(() -> {
-                while (queue.poll() != null)
-                    ;
-                hasOngoingConsumer = false;
-                while (queue.poll() != null)
-                    ;
-            });
         }
 
         @Actor
@@ -142,10 +220,16 @@ public class MpscQueue {
             test(2);
         }
 
+        @Actor
+        public void actor4() {
+            test(WORKER_COUNT - 1);
+        }
+
         @Arbiter
         public void arbiter(I_Result r) {
             r.r1 = queue.isEmpty() ? 1 : 0;
         }
+
     }
 
 }
