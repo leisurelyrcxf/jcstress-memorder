@@ -61,9 +61,9 @@ THE POSSIBILITY OF SUCH DAMAGE.
             <version>2.0.10</version>
         </dependency>
         <dependency>
-            <groupId>org.jctools</groupId>
-            <artifactId>jctools-core</artifactId>
-            <version>4.0.5</version>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-common</artifactId>
+            <version>4.1.65.Final</version>
         </dependency>
     </dependencies>
 
@@ -117,7 +117,8 @@ THE POSSIBILITY OF SUCH DAMAGE.
                                         implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                                     <mainClass>org.openjdk.jcstress.Main</mainClass>
                                 </transformer>
-                                <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+                                <transformer
+                                        implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
                                     <resource>META-INF/TestList</resource>
                                 </transformer>
                             </transformers>
@@ -127,6 +128,6 @@ THE POSSIBILITY OF SUCH DAMAGE.
             </plugin>
         </plugins>
     </build>
-    
+
 
 </project>

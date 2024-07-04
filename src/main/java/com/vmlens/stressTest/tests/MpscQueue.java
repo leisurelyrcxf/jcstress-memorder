@@ -23,7 +23,7 @@ package com.vmlens.stressTest.tests;/*
  * questions.
  */
 
-import org.jctools.queues.atomic.MpscUnboundedAtomicArrayQueue;
+import io.netty.util.internal.shaded.org.jctools.queues.atomic.MpscUnboundedAtomicArrayQueue;
 import org.openjdk.jcstress.annotations.Actor;
 import org.openjdk.jcstress.annotations.Arbiter;
 import org.openjdk.jcstress.annotations.JCStressTest;
