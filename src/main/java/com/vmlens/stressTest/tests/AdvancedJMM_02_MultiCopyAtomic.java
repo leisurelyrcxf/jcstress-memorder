@@ -313,8 +313,8 @@ public class AdvancedJMM_02_MultiCopyAtomic {
 
 
     @JCStressTest
-    @Outcome(id = "1, 0, 1, 0", expect = ACCEPTABLE_INTERESTING, desc = "Whoa")
-    @Outcome(                   expect = ACCEPTABLE,             desc = "Boring")
+    @Outcome(id = "1, 0, 1, 0", expect = FORBIDDEN,  desc = "Whoa")
+    @Outcome(                   expect = ACCEPTABLE, desc = "Boring")
     @State
     public static class LoadLoadIRIWTest {
 
@@ -323,14 +323,16 @@ public class AdvancedJMM_02_MultiCopyAtomic {
 
         @Actor
         public void actor1() {
+//            UNSAFE.fullFence(); // "SeqCst" store
+            VarHandle.releaseFence();
             x = 1;
-            UNSAFE.fullFence(); // "SeqCst" store
         }
 
         @Actor
         public void actor2() {
+//            UNSAFE.storeFence(); // "SeqCst" store
+            VarHandle.releaseFence();
             y = 1;
-            UNSAFE.fullFence(); // "SeqCst" store
         }
 
         @Actor
