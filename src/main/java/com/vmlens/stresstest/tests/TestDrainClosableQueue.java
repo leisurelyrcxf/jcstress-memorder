@@ -1,8 +1,9 @@
 package com.vmlens.stressTest.tests;
 
-import com.vmlens.stressTest.datastruct.ConcurrentLinkedDrainClosableQueue;
-import com.vmlens.stressTest.datastruct.DrainClosableQueue;
-import com.vmlens.stressTest.datastruct.OfferResult;
+import java.util.concurrent.ExecutionException;
+
+import com.vmlens.stresstest.datastruct.ConcurrentLinkedDrainClosableQueue;
+import com.vmlens.stresstest.datastruct.OfferResult;
 import org.apache.mina.util.ConcurrentHashSet;
 import org.openjdk.jcstress.annotations.Actor;
 import org.openjdk.jcstress.annotations.Arbiter;
@@ -11,15 +12,13 @@ import org.openjdk.jcstress.annotations.Outcome;
 import org.openjdk.jcstress.annotations.State;
 import org.openjdk.jcstress.infra.results.L_Result;
 
-import java.util.concurrent.ExecutionException;
-
 import static org.openjdk.jcstress.annotations.Expect.ACCEPTABLE;
 import static org.openjdk.jcstress.annotations.Expect.FORBIDDEN;
 
 @JCStressTest
 @State
 @Outcome(id = {"1"}, expect = ACCEPTABLE, desc = "Boring")
-@Outcome(            expect = FORBIDDEN,  desc = "Processed != Offered")
+@Outcome(expect = FORBIDDEN, desc = "Processed != Offered")
 public class TestDrainClosableQueue {
     private final ConcurrentLinkedDrainClosableQueue<Integer> queue = new ConcurrentLinkedDrainClosableQueue<>(true);
     private final ConcurrentHashSet<Integer> offered = new ConcurrentHashSet<>();
@@ -34,12 +33,12 @@ public class TestDrainClosableQueue {
     @Actor
     void thread2() {
         int i = 0;
-        while(true) {
+        while (true) {
             try {
                 if (queue.tryOffer(i, false) != OfferResult.SUCCESS)
                     break;
                 offered.add(i);
-                i = i +3;
+                i = i + 3;
             } catch (ExecutionException e) {
                 throw new RuntimeException(e);
             } catch (InterruptedException e) {
@@ -51,12 +50,12 @@ public class TestDrainClosableQueue {
     @Actor
     void thread3() {
         int i = 1;
-        while(true) {
+        while (true) {
             try {
                 if (queue.tryOffer(i, false) != OfferResult.SUCCESS)
                     break;
                 offered.add(i);
-                i = i +3;
+                i = i + 3;
             } catch (ExecutionException e) {
                 throw new RuntimeException(e);
             } catch (InterruptedException e) {
@@ -68,12 +67,12 @@ public class TestDrainClosableQueue {
     @Actor
     void thread4() {
         int i = 2;
-        while(true) {
+        while (true) {
             try {
                 if (queue.tryOffer(i, false) != OfferResult.SUCCESS)
                     break;
                 offered.add(i);
-                i = i +3;
+                i = i + 3;
             } catch (ExecutionException e) {
                 throw new RuntimeException(e);
             } catch (InterruptedException e) {

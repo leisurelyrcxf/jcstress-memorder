@@ -28,7 +28,7 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.util.concurrent.ConcurrentHashMap;
 
-import com.vmlens.stressTest.datastruct.concurrent.map.MyConcurrentHashMap;
+import com.vmlens.stresstest.datastruct.concurrent.map.MyConcurrentHashMap;
 import org.openjdk.jcstress.annotations.Actor;
 import org.openjdk.jcstress.annotations.JCStressTest;
 import org.openjdk.jcstress.annotations.Outcome;
