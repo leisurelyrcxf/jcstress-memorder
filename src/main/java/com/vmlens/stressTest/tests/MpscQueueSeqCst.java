@@ -23,6 +23,9 @@ package com.vmlens.stressTest.tests;/*
  * questions.
  */
 
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import org.jctools.queues.atomic.MpscUnboundedAtomicArrayQueue;
 import org.openjdk.jcstress.annotations.Actor;
 import org.openjdk.jcstress.annotations.Arbiter;
@@ -31,13 +34,10 @@ import org.openjdk.jcstress.annotations.Outcome;
 import org.openjdk.jcstress.annotations.State;
 import org.openjdk.jcstress.infra.results.I_Result;
 
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
-
 import static org.openjdk.jcstress.annotations.Expect.ACCEPTABLE;
 import static org.openjdk.jcstress.annotations.Expect.FORBIDDEN;
 
-public class MpscQueue {
+public class MpscQueueSeqCst {
 
     public static class HasOngoingSendLoop {
 
@@ -58,11 +58,15 @@ public class MpscQueue {
             return safe.compareAndSet(expectedValue, newValue);
         }
 
+        public void setSafe(boolean b) {
+            safe.set(b);
+        }
+
         /**
          * This method is not thread safe, can only be used from single thread.
          *
          * @param expectedValue expected value
-         * @param newValue new value
+         * @param newValue      new value
          * @return true if the value was updated
          */
         public boolean compareAndSetUnsafe(boolean expectedValue, boolean newValue) {
@@ -71,10 +75,6 @@ public class MpscQueue {
             }
             unsafe = newValue;
             return true;
-        }
-
-        public void setSafe(boolean b) {
-            safe.set(b);
         }
 
         public void setUnsafe(boolean b) {
@@ -98,7 +98,7 @@ public class MpscQueue {
     @State
     @Outcome(id = "1", expect = ACCEPTABLE, desc = "Boring: queue empty")
     @Outcome(expect = FORBIDDEN, desc = "Impossible: dangling element in the queue")
-    public static class MpscQueueFirst {
+    public static class MpscQueueTest {
 
         private static final int WORKER_COUNT = 4;
 

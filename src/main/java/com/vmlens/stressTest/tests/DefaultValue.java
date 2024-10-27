@@ -11,33 +11,43 @@ import static org.openjdk.jcstress.annotations.Expect.FORBIDDEN;
 
 @JCStressTest
 @State
-@Outcome(id = {"-1", "42"}, expect = ACCEPTABLE,             desc = "Boring")
-@Outcome(id = "0",          expect = FORBIDDEN, desc = "Whoa")
-public  class FinalPlusNonFinal {
+@Outcome(id = "42", expect = ACCEPTABLE, desc = "Boring")
+@Outcome(id = "-2", expect = ACCEPTABLE, desc = "Not initialized yet")
+@Outcome(expect = FORBIDDEN, desc = "Every other result is forbidden.")
+public class DefaultValue {
+
     static class Holder {
+
         int x;
-        final int y;
+
         Holder() {
-            y = 1;
             x = 42;
         }
+
     }
 
-    Holder h;
+    static class HolderHolder {
+
+        final Holder h = new Holder();
+
+    }
+
+    HolderHolder hh;
 
     @Actor
     void thread1() {
-        h = new Holder();
+        hh = new HolderHolder();
     }
 
     @Actor
     void thread2(I_Result r) {
-        Holder lh = h;
-        if (lh != null) {
-            r.r1 = lh.x;
+        if (hh == null) {
+            r.r1 = -2;
         } else {
-            r.r1 = -1;
+            Holder h = hh.h;
+            r.r1 = h.x;
         }
     }
+
 }
 

@@ -58,12 +58,32 @@ THE POSSIBILITY OF SUCH DAMAGE.
         <dependency>
             <groupId>org.apache.mina</groupId>
             <artifactId>mina-core</artifactId>
-            <version>2.0.10</version>
+            <version>2.1.1</version>
         </dependency>
         <dependency>
             <groupId>org.jctools</groupId>
             <artifactId>jctools-core</artifactId>
             <version>4.0.5</version>
+        </dependency>
+        <dependency>
+            <groupId>com.google.code.findbugs</groupId>
+            <artifactId>jsr305</artifactId>
+            <version>3.0.2</version>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>1.7.36</version>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-simple</artifactId>
+            <version>1.7.36</version>
+        </dependency>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>1.18.24</version>
         </dependency>
     </dependencies>
 
@@ -78,7 +98,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
         <!--
             Java source/target to use for compilation.
           -->
-        <javac.target>1.8</javac.target>
+        <javac.target>17</javac.target>
 
         <!--
             Name of the test Uber-JAR to generate.
@@ -94,8 +114,8 @@ THE POSSIBILITY OF SUCH DAMAGE.
                 <version>3.1</version>
                 <configuration>
                     <compilerVersion>${javac.target}</compilerVersion>
-                    <source>9</source>
-                    <target>9</target>
+                    <source>16</source>
+                    <target>16</target>
                 </configuration>
             </plugin>
 
@@ -117,7 +137,8 @@ THE POSSIBILITY OF SUCH DAMAGE.
                                         implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                                     <mainClass>org.openjdk.jcstress.Main</mainClass>
                                 </transformer>
-                                <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+                                <transformer
+                                        implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
                                     <resource>META-INF/TestList</resource>
                                 </transformer>
                             </transformers>
@@ -127,6 +148,4 @@ THE POSSIBILITY OF SUCH DAMAGE.
             </plugin>
         </plugins>
     </build>
-    
-
 </project>

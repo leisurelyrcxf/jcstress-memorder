@@ -1,5 +1,3 @@
-package com.vmlens.stressTest.tests;
-
 /*
  * Copyright (c) 2016, 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -24,15 +22,21 @@ package com.vmlens.stressTest.tests;
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
-import org.openjdk.jcstress.annotations.*;
-import org.openjdk.jcstress.infra.results.II_Result;
-import org.openjdk.jcstress.infra.results.I_Result;
+package com.vmlens.stressTest.tests.basic;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 
-import static org.openjdk.jcstress.annotations.Expect.*;
+import org.openjdk.jcstress.annotations.Actor;
+import org.openjdk.jcstress.annotations.JCStressTest;
+import org.openjdk.jcstress.annotations.Mode;
+import org.openjdk.jcstress.annotations.Outcome;
+import org.openjdk.jcstress.annotations.Signal;
+import org.openjdk.jcstress.annotations.State;
+
+import static org.openjdk.jcstress.annotations.Expect.ACCEPTABLE;
+import static org.openjdk.jcstress.annotations.Expect.ACCEPTABLE_INTERESTING;
+import static org.openjdk.jcstress.annotations.Expect.FORBIDDEN;
 
 public class BasicJMM_04_Progress {
 
@@ -57,15 +61,15 @@ public class BasicJMM_04_Progress {
       */
 
     @JCStressTest(Mode.Termination)
-    @Outcome(id = "TERMINATED", expect = ACCEPTABLE,             desc = "Gracefully finished")
-    @Outcome(id = "STALE",      expect = ACCEPTABLE_INTERESTING, desc = "Test is stuck")
+    @Outcome(id = "TERMINATED", expect = ACCEPTABLE, desc = "Gracefully finished")
+    @Outcome(id = "STALE", expect = ACCEPTABLE_INTERESTING, desc = "Test is stuck")
     @State
     public static class PlainSpin {
         boolean ready;
 
         @Actor
         public void actor1() {
-            while (!ready); // spin
+            while (!ready) ; // spin
         }
 
         @Signal
@@ -74,17 +78,28 @@ public class BasicJMM_04_Progress {
         }
     }
 
+
     @JCStressTest(Mode.Termination)
-    @Outcome(id = "TERMINATED", expect = ACCEPTABLE,  desc = "Gracefully finished")
-    @Outcome(id = "STALE",      expect = FORBIDDEN,   desc = "Test is stuck")
+    @Outcome(id = "TERMINATED", expect = ACCEPTABLE, desc = "Gracefully finished")
+    @Outcome(id = "STALE", expect = FORBIDDEN, desc = "Test is stuck")
     @State
-    public static class SpinMemBarrier {
+    public static class PlainSpinFunctionCall {
+
         boolean ready;
+        volatile boolean flag = true;
+
+        public boolean getReady() {
+            flag = false;
+            return ready;
+        }
+
+        public void setFlag() {
+            flag = false;
+        }
 
         @Actor
         public void actor1() {
-            while (!ready) {
-                VarHandle.fullFence();
+            while (!getReady()) {
             }
         }
 
@@ -108,15 +123,15 @@ public class BasicJMM_04_Progress {
      */
 
     @JCStressTest(Mode.Termination)
-    @Outcome(id = "TERMINATED", expect = ACCEPTABLE,             desc = "Gracefully finished")
-    @Outcome(id = "STALE",      expect = ACCEPTABLE_INTERESTING, desc = "Test is stuck")
+    @Outcome(id = "TERMINATED", expect = ACCEPTABLE, desc = "Gracefully finished")
+    @Outcome(id = "STALE", expect = ACCEPTABLE_INTERESTING, desc = "Test is stuck")
     @State
     public static class VolatileSpin {
         volatile boolean ready;
 
         @Actor
         public void actor1() {
-            while (!ready); // spin
+            while (!ready) ; // spin
         }
 
         @Signal
@@ -139,9 +154,9 @@ public class BasicJMM_04_Progress {
           TERMINATED   17,902  100.00%  Acceptable  Gracefully finished
      */
 
-    @JCStressTest
-    @Outcome(id = "1", expect = ACCEPTABLE, desc = "Gracefully finished")
-    @Outcome(id = "0",      expect = FORBIDDEN,  desc = "Test is stuck")
+    @JCStressTest(Mode.Termination)
+    @Outcome(id = "TERMINATED", expect = ACCEPTABLE, desc = "Gracefully finished")
+    @Outcome(id = "STALE", expect = FORBIDDEN, desc = "Test is stuck")
     @State
     public static class OpaqueSpin {
         static final VarHandle VH;
@@ -155,31 +170,71 @@ public class BasicJMM_04_Progress {
         }
 
         boolean ready;
-        long readerTs;
-        long writerTs;
 
         @Actor
-        public void reader() {
-            while (true) {
-                long localTs = System.nanoTime();
-                VarHandle.loadLoadFence();
-                if ((boolean) VH.getOpaque(this)) {
-                    break;
-                }
-                readerTs = localTs;
+        public void actor1() {
+            while (!(boolean) VH.getOpaque(this)) ; // spin
+        }
+
+        @Signal
+        public void signal() {
+            VH.setOpaque(this, true);
+        }
+    }
+
+    @JCStressTest(Mode.Termination)
+    @Outcome(id = "TERMINATED", expect = ACCEPTABLE, desc = "Gracefully finished")
+    @Outcome(id = "STALE", expect = FORBIDDEN, desc = "Test is stuck")
+    @State
+    public static class OpaqueSpinSetPlainGetOpaque {
+        static final VarHandle VH;
+
+        static {
+            try {
+                VH = MethodHandles.lookup().findVarHandle(OpaqueSpinSetPlainGetOpaque.class, "ready", boolean.class);
+            } catch (NoSuchFieldException | IllegalAccessException e) {
+                throw new IllegalStateException(e);
             }
         }
 
+        boolean ready;
+
         @Actor
-        public void writer() {
-            VH.setOpaque(this, true);
-            VarHandle.storeStoreFence();
-            writerTs = System.nanoTime();
+        public void actor1() {
+            while (!(boolean) VH.getOpaque(this)) ; // spin
         }
 
-        @Arbiter
-        public void arbiter(I_Result r) {
-            r.r1 = readerTs <= writerTs ? 1 : 0;
+        @Signal
+        public void signal() {
+            ready = true;
+        }
+    }
+
+    @JCStressTest(Mode.Termination)
+    @Outcome(id = "TERMINATED", expect = ACCEPTABLE, desc = "Gracefully finished")
+    @Outcome(id = "STALE", expect = ACCEPTABLE_INTERESTING, desc = "Test is stuck")
+    @State
+    public static class OpaqueSpinSetOpaqueGetPlain {
+        static final VarHandle VH;
+
+        static {
+            try {
+                VH = MethodHandles.lookup().findVarHandle(OpaqueSpinSetOpaqueGetPlain.class, "ready", boolean.class);
+            } catch (NoSuchFieldException | IllegalAccessException e) {
+                throw new IllegalStateException(e);
+            }
+        }
+
+        boolean ready;
+
+        @Actor
+        public void actor1() {
+            while (!ready) ; // spin
+        }
+
+        @Signal
+        public void signal() {
+            VH.setOpaque(this, true);
         }
     }
 
@@ -199,8 +254,8 @@ public class BasicJMM_04_Progress {
      */
 
     @JCStressTest(Mode.Termination)
-    @Outcome(id = "TERMINATED", expect = ACCEPTABLE,             desc = "Gracefully finished")
-    @Outcome(id = "STALE",      expect = ACCEPTABLE_INTERESTING, desc = "Test is stuck")
+    @Outcome(id = "TERMINATED", expect = ACCEPTABLE, desc = "Gracefully finished")
+    @Outcome(id = "STALE", expect = ACCEPTABLE_INTERESTING, desc = "Test is stuck")
     @State
     public static class SyncSpin {
         boolean ready;
