@@ -1,4 +1,4 @@
-package com.vmlens.stressTest.datastruct;
+package com.vmlens.stresstest.datastruct;
 
 public enum OfferResult {
     SUCCESS,

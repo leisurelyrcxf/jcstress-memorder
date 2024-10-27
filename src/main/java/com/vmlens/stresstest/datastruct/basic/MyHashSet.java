@@ -23,7 +23,7 @@
  * questions.
  */
 
-package com.vmlens.stressTest.datastruct.basic;
+package com.vmlens.stresstest.datastruct.basic;
 
 import java.util.AbstractSet;
 import java.util.Collection;

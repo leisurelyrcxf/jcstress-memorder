@@ -22,7 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package com.vmlens.stressTest.tests.datastructure.concurrent.map;
+package com.vmlens.stresstest.tests.datastructure.concurrent.map;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;

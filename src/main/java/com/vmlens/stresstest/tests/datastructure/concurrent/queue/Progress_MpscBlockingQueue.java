@@ -1,4 +1,4 @@
-package com.vmlens.stressTest.tests.datastructure.concurrent.queue;
+package com.vmlens.stresstest.tests.datastructure.concurrent.queue;
 
 import com.vmlens.stresstest.datastruct.MpscBlockingQueue;
 import org.openjdk.jcstress.annotations.Actor;

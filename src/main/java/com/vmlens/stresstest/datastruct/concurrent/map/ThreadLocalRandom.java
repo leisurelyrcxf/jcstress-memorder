@@ -1,4 +1,4 @@
-package com.vmlens.stressTest.datastruct.concurrent.map;
+package com.vmlens.stresstest.datastruct.concurrent.map;
 
 public class ThreadLocalRandom {
     private static final ThreadLocal<Integer> PROBE = ThreadLocal.withInitial(() -> 0);

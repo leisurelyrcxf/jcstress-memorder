@@ -1,4 +1,4 @@
-package com.vmlens.stressTest.tests;
+package com.vmlens.stresstest.tests;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadLocalRandom;

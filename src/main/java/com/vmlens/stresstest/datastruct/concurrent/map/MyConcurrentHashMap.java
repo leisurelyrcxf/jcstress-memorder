@@ -33,7 +33,7 @@
  * http://creativecommons.org/publicdomain/zero/1.0/
  */
 
-package com.vmlens.stressTest.datastruct.concurrent.map;
+package com.vmlens.stresstest.datastruct.concurrent.map;
 
 import java.io.ObjectStreamField;
 import java.io.Serializable;

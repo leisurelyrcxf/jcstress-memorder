@@ -22,7 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package com.vmlens.stressTest.tests.basic;
+package com.vmlens.stresstest.tests.basic;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;

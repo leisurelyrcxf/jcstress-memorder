@@ -1,4 +1,4 @@
-package com.vmlens.stressTest.tests;
+package com.vmlens.stresstest.tests;
 
 import org.openjdk.jcstress.annotations.Actor;
 import org.openjdk.jcstress.annotations.Arbiter;

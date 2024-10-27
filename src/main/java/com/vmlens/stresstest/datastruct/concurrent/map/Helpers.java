@@ -1,4 +1,4 @@
-package com.vmlens.stressTest.datastruct.concurrent.map;
+package com.vmlens.stresstest.datastruct.concurrent.map;
 
 import java.util.Collection;
 
