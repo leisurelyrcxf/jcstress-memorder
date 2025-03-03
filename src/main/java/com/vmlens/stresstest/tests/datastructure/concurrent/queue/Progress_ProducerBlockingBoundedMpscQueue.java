@@ -1,6 +1,6 @@
 package com.vmlens.stresstest.tests.datastructure.concurrent.queue;
 
-import org.jctools.queues.blocking.ProducerBlockingBoundedMpscQueue;
+import com.vmlens.stresstest.datastruct.concurrent.queue.blocking.ProducerBlockingBoundedMpscQueue;
 import org.openjdk.jcstress.annotations.Actor;
 import org.openjdk.jcstress.annotations.JCStressTest;
 import org.openjdk.jcstress.annotations.Outcome;
