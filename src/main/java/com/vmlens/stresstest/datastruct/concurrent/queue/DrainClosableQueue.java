@@ -1,4 +1,6 @@
-package com.vmlens.stresstest.datastruct;
+package com.vmlens.stresstest.datastruct.concurrent.queue;
+
+import com.vmlens.stresstest.datastruct.OfferResult;
 
 import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;

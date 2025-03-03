@@ -1,4 +1,6 @@
-package com.vmlens.stresstest.datastruct;
+package com.vmlens.stresstest.datastruct.concurrent.queue;
+
+import com.vmlens.stresstest.datastruct.OfferResult;
 
 import java.util.ConcurrentModificationException;
 import java.util.concurrent.CompletableFuture;
@@ -7,7 +9,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
-public class ConcurrentLinkedDrainClosableQueue<T> implements  DrainClosableQueue<T> {
+public class ConcurrentLinkedDrainClosableQueue<T> implements DrainClosableQueue<T> {
 
     static class Node<T> {
         Node<T> next = null; // an auxiliary field to help drainAndClose()

@@ -1,12 +1,11 @@
-package com.vmlens.stresstest.datastruct;
-
-import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.ReentrantLock;
-
-import javax.annotation.Nullable;
+package com.vmlens.stresstest.datastruct.concurrent.queue;
 
 import lombok.extern.slf4j.Slf4j;
 import org.jctools.queues.MpscUnboundedArrayQueue;
+
+import javax.annotation.Nullable;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * 多生产者单消费者（MPSC）阻塞队列实现
@@ -15,12 +14,12 @@ import org.jctools.queues.MpscUnboundedArrayQueue;
  * @author xiaofan
  */
 @Slf4j
-public class MpscBlockingQueue<E> {
+public class BoundedMpscBlockingQueue<E> {
     private final MpscUnboundedArrayQueue<E> queue;
     private final ReentrantLock lock = new ReentrantLock();
     private final Condition notEmpty = lock.newCondition();
 
-    public MpscBlockingQueue() {
+    public BoundedMpscBlockingQueue() {
         this.queue = new MpscUnboundedArrayQueue<>(1024);
     }
 
