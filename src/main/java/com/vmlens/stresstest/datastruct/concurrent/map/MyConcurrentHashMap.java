@@ -2347,40 +2347,39 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
     private final void addCount(long x, int check) {
         CounterCell[] cs;
         long b, s;
-        if ((cs = counterCells) != null ||
-                !U.compareAndSwapLong(this, BASECOUNT, b = baseCount, s = b + x)) {
-            CounterCell c;
-            long v;
-            int m;
-            boolean uncontended = true;
-            if (cs == null || (m = cs.length - 1) < 0 ||
-                    (c = cs[ThreadLocalRandom.getProbe() & m]) == null ||
-                    !(uncontended =
-                            U.compareAndSwapLong(c, CELLVALUE, v = c.value, v + x))) {
-                fullAddCount(x, uncontended);
-                return;
-            }
-            if (check <= 1)
-                return;
-            s = sumCount();
-        }
-        if (check >= 0) {
-            Node<K, V>[] tab, nt;
-            int n, sc;
-            while (s >= (long) (sc = sizeCtl) && (tab = table) != null &&
-                    (n = tab.length) < MAXIMUM_CAPACITY) {
-                int rs = resizeStamp(n) << RESIZE_STAMP_SHIFT;
-                if (sc < 0) {
-                    if (sc == rs + MAX_RESIZERS || sc == rs + 1 ||
-                            (nt = nextTable) == null || transferIndex <= 0)
-                        break;
-                    if (U.compareAndSwapInt(this, SIZECTL, sc, sc + 1))
-                        transfer(tab, nt);
-                } else if (U.compareAndSwapInt(this, SIZECTL, sc, rs + 2))
-                    transfer(tab, null);
-                s = sumCount();
-            }
-        }
+//        if (!U.compareAndSwapLong(this, BASECOUNT, b = baseCount, s = b + x)) {
+//            CounterCell c;
+//            long v;
+//            int m;
+//            boolean uncontended = true;
+//            if (cs == null || (m = cs.length - 1) < 0 ||
+//                    (c = cs[ThreadLocalRandom.getProbe() & m]) == null ||
+//                    !(uncontended =
+//                            U.compareAndSwapLong(c, CELLVALUE, v = c.value, v + x))) {
+//                fullAddCount(x, uncontended);
+//                return;
+//            }
+//            if (check <= 1)
+//                return;
+//            s = sumCount();
+//        }
+//        if (check >= 0) {
+//            Node<K, V>[] tab, nt;
+//            int n, sc;
+//            while (s >= (long) (sc = sizeCtl) && (tab = table) != null &&
+//                    (n = tab.length) < MAXIMUM_CAPACITY) {
+//                int rs = resizeStamp(n) << RESIZE_STAMP_SHIFT;
+//                if (sc < 0) {
+//                    if (sc == rs + MAX_RESIZERS || sc == rs + 1 ||
+//                            (nt = nextTable) == null || transferIndex <= 0)
+//                        break;
+//                    if (U.compareAndSwapInt(this, SIZECTL, sc, sc + 1))
+//                        transfer(tab, nt);
+//                } else if (U.compareAndSwapInt(this, SIZECTL, sc, rs + 2))
+//                    transfer(tab, null);
+//                s = sumCount();
+//            }
+//        }
     }
 
     /**

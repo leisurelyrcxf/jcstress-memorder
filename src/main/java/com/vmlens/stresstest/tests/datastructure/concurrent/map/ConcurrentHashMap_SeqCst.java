@@ -24,16 +24,20 @@
  */
 package com.vmlens.stresstest.tests.datastructure.concurrent.map;
 
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.VarHandle;
-import java.util.concurrent.ConcurrentHashMap;
-
 import com.vmlens.stresstest.datastruct.concurrent.map.MyConcurrentHashMap;
+import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
 import org.openjdk.jcstress.annotations.Actor;
 import org.openjdk.jcstress.annotations.JCStressTest;
 import org.openjdk.jcstress.annotations.Outcome;
 import org.openjdk.jcstress.annotations.State;
+import org.openjdk.jcstress.infra.results.IIII_Result;
 import org.openjdk.jcstress.infra.results.II_Result;
+
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.openjdk.jcstress.annotations.Expect.ACCEPTABLE;
 import static org.openjdk.jcstress.annotations.Expect.FORBIDDEN;
@@ -42,28 +46,14 @@ import static org.openjdk.jcstress.annotations.Expect.FORBIDDEN;
 public class ConcurrentHashMap_SeqCst {
 
     private static final String KEY1 = "a";
-    private static final String KEY2 = "b";
-
-
-    /*
-      ----------------------------------------------------------------------------------------------------------
-
-        Adding volatile to both $x and $y bring them together into synchronization order, and thus require
-        the results to be consistent with the case when reads/writes form a total order.
-
-          RESULT        SAMPLES     FREQ      EXPECT  DESCRIPTION
-            0, 0              0    0.00%   Forbidden  Violates sequential consistency
-            0, 1  1,016,018,128   44.40%  Acceptable  Trivial under sequential consistency
-            1, 0  1,068,127,239   46.68%  Acceptable  Trivial under sequential consistency
-            1, 1    204,027,177    8.92%  Acceptable  Trivial under sequential consistency
-     */
+    private static final String KEY2 = "ccc";
 
     @JCStressTest
     @Outcome(id = {"0, 1", "1, 0", "1, 1"}, expect = ACCEPTABLE, desc = "Trivial under sequential consistency")
     @Outcome(id = "0, 0", expect = FORBIDDEN, desc = "Violates sequential consistency")
     @State
     public static class ConcurrentHashMapDekker_put {
-        ConcurrentHashMap<String, Integer> map = new ConcurrentHashMap<>();
+        MyConcurrentHashMap<String, Integer> map = new MyConcurrentHashMap<>();
 
         @Actor
         public void actor1(II_Result r) {
@@ -75,6 +65,66 @@ public class ConcurrentHashMap_SeqCst {
         public void actor2(II_Result r) {
             map.put(KEY2, 1);
             r.r2 = map.getOrDefault(KEY1, 0);
+        }
+    }
+
+    @JCStressTest
+    @Outcome(id = {"1, 2, 2, 1", "2, 1, 1, 2"}, expect = FORBIDDEN, desc = "Violates coherence.")
+    @Outcome(expect = ACCEPTABLE, desc = "Every other result is ignored.")
+    @State
+    public static class ConcurrentHashMap_NonMCA_Coherence {
+        final ConcurrentHashMap<String, Integer> map = new ConcurrentHashMap<>();
+
+        @Actor
+        public void actor1() {
+            map.put(KEY1, 1);
+        }
+
+        @Actor
+        public void actor2() {
+            map.put(KEY1, 2);
+        }
+
+        @Actor
+        public void actor3(IIII_Result r) {
+            r.r1 = map.getOrDefault(KEY1, 0);
+            r.r2 = map.getOrDefault(KEY1, 0);
+        }
+
+        @Actor
+        public void actor4(IIII_Result r) {
+            r.r3 = map.getOrDefault(KEY1, 0);
+            r.r4 = map.getOrDefault(KEY1, 0);
+        }
+    }
+
+    @JCStressTest
+    @Outcome(id = "1, 0, 1, 0", expect = FORBIDDEN, desc = "Whoa")
+    @Outcome(expect = ACCEPTABLE, desc = "Boring")
+    @State
+    public static class ConcurrentHashMap_MultiCopy {
+        final ConcurrentHashMap<String, Integer> map = new ConcurrentHashMap<>();
+
+        @Actor
+        public void actor1() {
+            map.put(KEY1, 1);
+        }
+
+        @Actor
+        public void actor2() {
+            map.put(KEY2, 1);
+        }
+
+        @Actor
+        public void actor3(IIII_Result r) {
+            r.r1 = map.getOrDefault(KEY1, 0);
+            r.r2 = map.getOrDefault(KEY2, 0);
+        }
+
+        @Actor
+        public void actor4(IIII_Result r) {
+            r.r3 = map.getOrDefault(KEY2, 0);
+            r.r4 = map.getOrDefault(KEY1, 0);
         }
     }
 
@@ -103,41 +153,103 @@ public class ConcurrentHashMap_SeqCst {
     @Outcome(id = {"0, 1", "1, 0", "1, 1"}, expect = ACCEPTABLE, desc = "Trivial under sequential consistency")
     @Outcome(id = "0, 0", expect = FORBIDDEN, desc = "Violates sequential consistency")
     @State
-    public static class SynchronizedAcqRelDekker {
-        static final VarHandle VH_X;
-        static final VarHandle VH_Y;
-
-        static {
-            try {
-                VH_X = MethodHandles.lookup().findVarHandle(SynchronizedAcqRelDekker.class, "x", int.class);
-                VH_Y = MethodHandles.lookup().findVarHandle(SynchronizedAcqRelDekker.class, "y", int.class);
-            } catch (NoSuchFieldException | IllegalAccessException e) {
-                throw new IllegalStateException(e);
-            }
-        }
-
-        int x;
-        int y;
-
-        final Object lockx = new Object();
-        final Object locky = new Object();
+    public static class SynchronizedOpaqueDekker {
+        static final VarHandle VH_ARRAY = MethodHandles.arrayElementVarHandle(int[].class);
+        static final int FIRST = 0;
+        static final int SECOND = 1;
+        final int[] array = new int[2];
+        final AtomicInteger counter = new AtomicInteger();
 
         @Actor
         public void actor1(II_Result r) {
-            synchronized (lockx) {
-                VH_X.setRelease(this, 1);
-            }
-            r.r1 = (int) VH_Y.getAcquire(this);
+            VH_ARRAY.setOpaque(array, FIRST, 1);
+            counter.incrementAndGet(); // full fence
+            r.r1 = (int) VH_ARRAY.getOpaque(array, SECOND);
         }
 
         @Actor
         public void actor2(II_Result r) {
-            synchronized (locky) {
-                VH_Y.setRelease(this, 1);
-            }
-            r.r2 = (int) VH_X.getAcquire(this);
+            VH_ARRAY.setOpaque(array, SECOND, 1);
+            counter.incrementAndGet(); // full fence
+            r.r2 = (int) VH_ARRAY.getOpaque(array, FIRST);
         }
     }
 
+    @JCStressTest
+    @Outcome(id = {"-1, 1", "1, -1", "1, 1"}, expect = ACCEPTABLE, desc = "Trivial under sequential consistency")
+    @Outcome(id = {"-1, -1"}, expect = FORBIDDEN, desc = "Violates sequential consistency")
+    @Outcome(expect = FORBIDDEN, desc = "Partial constructed object")
+    @State
+    public static class SynchronizedOpaqueDekker_PartialConstruction {
+        @NoArgsConstructor
+        @AllArgsConstructor
+        static class Node {
+            int val;
+        }
+
+        static final VarHandle VH_ARRAY = MethodHandles.arrayElementVarHandle(Node[].class);
+        static final int FIRST = 0;
+        static final int SECOND = 1;
+        final Node[] array = new Node[2];
+        final AtomicInteger counter = new AtomicInteger();
+
+        public SynchronizedOpaqueDekker_PartialConstruction() {
+            array[FIRST] = new Node(-1);
+            array[SECOND] = new Node(-1);
+        }
+
+        @Actor
+        public void actor1(II_Result r) {
+            VH_ARRAY.setOpaque(array, FIRST, new Node(1));
+            counter.incrementAndGet(); // equivalent to fullFence
+            r.r1 = ((Node) VH_ARRAY.getOpaque(array, SECOND)).val;
+        }
+
+        @Actor
+        public void actor2(II_Result r) {
+            VH_ARRAY.setOpaque(array, SECOND, new Node(1));
+            counter.incrementAndGet(); // equivalent to fullFence
+            r.r2 = ((Node) VH_ARRAY.getOpaque(array, FIRST)).val;
+        }
+    }
+
+    @JCStressTest
+    @Outcome(id = {"-1, 1", "1, -1", "1, 1"}, expect = ACCEPTABLE, desc = "Trivial under sequential consistency")
+    @Outcome(id = {"-1, -1"}, expect = FORBIDDEN, desc = "Violates sequential consistency")
+    @Outcome(expect = FORBIDDEN, desc = "Partial constructed object")
+    @State
+    public static class SynchronizedAcqRelDekker_PartialConstruction_Impossible_AcqRel {
+        @NoArgsConstructor
+        @AllArgsConstructor
+        static class Node {
+            int val;
+        }
+
+        static final VarHandle VH_ARRAY = MethodHandles.arrayElementVarHandle(Node[].class);
+        static final int FIRST = 0;
+        static final int SECOND = 1;
+        final Node[] array = new Node[2];
+        final AtomicInteger counter1 = new AtomicInteger();
+        final AtomicInteger counter2 = new AtomicInteger();
+
+        public SynchronizedAcqRelDekker_PartialConstruction_Impossible_AcqRel() {
+            array[FIRST] = new Node(-1);
+            array[SECOND] = new Node(-1);
+        }
+
+        @Actor
+        public void actor1(II_Result r) {
+            VH_ARRAY.setRelease(array, FIRST, new Node(1));
+            counter1.incrementAndGet(); // equivalent to fullFence
+            r.r1 = ((Node) VH_ARRAY.getAcquire(array, SECOND)).val;
+        }
+
+        @Actor
+        public void actor2(II_Result r) {
+            VH_ARRAY.setRelease(array, SECOND, new Node(1));
+            counter2.incrementAndGet(); // equivalent to fullFence
+            r.r2 = ((Node) VH_ARRAY.getAcquire(array, FIRST)).val;
+        }
+    }
 
 }
