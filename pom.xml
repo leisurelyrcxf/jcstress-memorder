@@ -63,7 +63,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
         <dependency>
             <groupId>org.jctools</groupId>
             <artifactId>jctools-core</artifactId>
-            <version>4.0.5-okg-SNAPSHOT</version>
+            <version>4.0.5-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>com.google.code.findbugs</groupId>
