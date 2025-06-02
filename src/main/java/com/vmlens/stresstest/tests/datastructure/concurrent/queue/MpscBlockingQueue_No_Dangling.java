@@ -15,6 +15,7 @@ import static org.openjdk.jcstress.annotations.Expect.FORBIDDEN;
 
 public class MpscBlockingQueue_No_Dangling {
 
+    /** @noinspection unused*/
     @JCStressTest
     @Outcome(id = {"0"}, expect = ACCEPTABLE, desc = "Gracefully finished")
     @Outcome(expect = FORBIDDEN, desc = "Test is stuck")
@@ -24,8 +25,9 @@ public class MpscBlockingQueue_No_Dangling {
         MpscUnboundedArrayQueue<Runnable> tasks = new MpscUnboundedArrayQueue<>(2);
         AtomicBoolean lock = new AtomicBoolean();
 
+        private final int N = 2;
         volatile boolean stopProducer = false;
-        AtomicInteger producerRunning = new AtomicInteger(2);
+        AtomicInteger producerRunning = new AtomicInteger(N);
 
         @Actor
         public void producer1(I_Result r) {
@@ -48,7 +50,7 @@ public class MpscBlockingQueue_No_Dangling {
         private void produce(int i) {
             while (!stopProducer) {
                 queue.offer(i);
-                i += 2;
+                i += N;
                 if (!lock.get() && lock.compareAndSet(false, true)) {
                     tasks.offer(() -> {
                         while (true) {
