@@ -49,7 +49,7 @@ public class MpscBlockingQueue_No_Dangling {
             while (!stopProducer) {
                 queue.offer(i);
                 i += 2;
-                if (lock.compareAndSet(false, true)) {
+                if (!lock.get() && lock.compareAndSet(false, true)) {
                     tasks.offer(() -> {
                         while (true) {
                             var ele = queue.poll();

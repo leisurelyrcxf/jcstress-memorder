@@ -33,10 +33,10 @@ public class ProducerBlockingBoundedMpscQueue<E> implements BlockingQueue<E> {
             synchronized (isNotFull) {
                 waitingIsNotFullThreadCount.incrementAndGet();
                 // double check after increase of waitingIsNotFullThreadCount
-//                if (delegate.offer(e)) {
-//                    waitingIsNotFullThreadCount.decrementAndGet();
-//                    return;
-//                }
+                if (delegate.offer(e)) {
+                    waitingIsNotFullThreadCount.decrementAndGet();
+                    return;
+                }
                 try {
                     isNotFull.wait(2222);
                 } finally {
