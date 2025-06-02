@@ -103,7 +103,7 @@ public class MpscBlockingQueue_No_Dangling {
         @Actor
         public void stop(I_Result r) {
             try {
-                Thread.sleep(100);
+                Thread.sleep(1);
                 stopProducer = true;
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
