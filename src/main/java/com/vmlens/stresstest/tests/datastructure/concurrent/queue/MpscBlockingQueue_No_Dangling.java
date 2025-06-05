@@ -54,7 +54,7 @@ public class MpscBlockingQueue_No_Dangling {
                 if (!lock.get() && lock.compareAndSet(false, true)) {
                     tasks.offer(() -> {
                         while (true) {
-                            var ele = queue.poll();
+                            Integer ele = queue.poll();
                             if (ele == null) {
                                 lock.set(false);
                                 while (true) {
@@ -74,7 +74,7 @@ public class MpscBlockingQueue_No_Dangling {
         public void consumer(I_Result r) {
             outer:
             while (true) {
-                var task = tasks.poll();
+                Runnable task = tasks.poll();
                 if (task == null) {
                     if (producerRunning.get() == 0) {
                         while (true) {
@@ -92,7 +92,7 @@ public class MpscBlockingQueue_No_Dangling {
             }
             Integer e = null;
             for (int i = 0; i < 1000; i++) {
-                var ee = queue.poll();
+                Integer ee = queue.poll();
                 if (ee != null) {
                     e = ee;
                 }
@@ -103,7 +103,7 @@ public class MpscBlockingQueue_No_Dangling {
         @Actor
         public void stop(I_Result r) {
             try {
-                Thread.sleep(1);
+                Thread.sleep(0, 1);
                 stopProducer = true;
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);

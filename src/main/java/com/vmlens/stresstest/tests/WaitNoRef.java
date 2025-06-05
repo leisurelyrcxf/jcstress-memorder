@@ -41,14 +41,14 @@ public class WaitNoRef {
     public void signaller() {
         refCount.incrementAndGet();
         try {
-            var ds = this.datasource;
+            Datasource ds = this.datasource;
             if (ds != null) {
                 ds.read();
             }
         } finally {
             if (0 == refCount.decrementAndGet()) {
                 Thread.yield();
-                var wai = waitress;
+                CompletableFuture<Void>  wai = waitress;
                 if (wai != null) {
                     wai.complete(null);
                 }
@@ -76,7 +76,7 @@ public class WaitNoRef {
 
     @Actor
     public void poisoner() {
-        var old = datasource;
+        Datasource old = datasource;
         datasource = null;
 
         waitress = new CompletableFuture<>();
