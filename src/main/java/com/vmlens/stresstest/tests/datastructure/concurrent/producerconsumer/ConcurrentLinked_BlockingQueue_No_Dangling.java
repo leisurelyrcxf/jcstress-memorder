@@ -1,16 +1,18 @@
 package com.vmlens.stresstest.tests.datastructure.concurrent.producerconsumer;
 
-import org.jctools.queues.MpscUnboundedArrayQueue;
-import org.jctools.queues.SpscUnboundedArrayQueue;
-import org.openjdk.jcstress.annotations.*;
+import org.openjdk.jcstress.annotations.Actor;
+import org.openjdk.jcstress.annotations.JCStressTest;
+import org.openjdk.jcstress.annotations.Outcome;
+import org.openjdk.jcstress.annotations.State;
 import org.openjdk.jcstress.infra.results.I_Result;
 
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-import static org.openjdk.jcstress.annotations.Expect.*;
+import static org.openjdk.jcstress.annotations.Expect.ACCEPTABLE;
+import static org.openjdk.jcstress.annotations.Expect.ACCEPTABLE_INTERESTING;
 
-public class SpscBlockingQueue_No_Dangling {
+public class ConcurrentLinked_BlockingQueue_No_Dangling {
 
     @JCStressTest
     @Outcome(id = "0", expect = ACCEPTABLE, desc = "Gracefully finished")
@@ -21,7 +23,7 @@ public class SpscBlockingQueue_No_Dangling {
         private final MarketDataEngine marketDataEngine;
 
         public Progress1() {
-            Queue<Tick> q = new SpscUnboundedArrayQueue<>(8192);
+            Queue<Tick> q = new ConcurrentLinkedQueue<>();
             marketDataFeed = new MarketDataFeed(q);
             marketDataEngine = new MarketDataEngine(marketDataFeed);
         }
