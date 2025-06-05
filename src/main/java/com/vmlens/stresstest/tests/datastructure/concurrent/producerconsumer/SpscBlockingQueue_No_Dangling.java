@@ -1,7 +1,6 @@
 package com.vmlens.stresstest.tests.datastructure.concurrent.producerconsumer;
 
 import org.openjdk.jcstress.annotations.*;
-import org.openjdk.jcstress.infra.results.I_Result;
 
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
