@@ -1,6 +1,8 @@
 package com.vmlens.stresstest.tests.datastructure.concurrent.producerconsumer;
 
+import java.lang.invoke.VarHandle;
 import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -41,6 +43,9 @@ public class MarketDataEngine {
 
     private void offerTick(Tick tick) {
         q.offer(tick);
+        if (!(q instanceof ConcurrentLinkedQueue<Tick>)) {
+            VarHandle.fullFence();
+        }
         if (feed.isParked()) {
             feed.unpark();
         } else {
