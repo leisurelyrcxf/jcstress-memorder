@@ -1,7 +1,5 @@
 package com.vmlens.stresstest.tests.datastructure.concurrent.producerconsumer;
 
-import lombok.Getter;
-
 import java.util.Queue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -11,16 +9,28 @@ import java.util.concurrent.locks.LockSupport;
  * @author sadtheslayer
  */
 public class MarketDataFeed {
-    @Getter
     private final Queue<Tick> q;
+
+    public Queue<Tick> getQ() {
+        return q;
+    }
     Thread thread;
 
-    @Getter
     private double min = Double.MAX_VALUE;
-    @Getter
+
+    public double getMin() {
+        return min;
+    }
     private double max = 0.0;
-    @Getter
+
+    public  double getMax() {
+        return max;
+    }
     private double current = -1.0;
+
+    public double getCurrent() {
+        return current;
+    }
 
     private volatile boolean parked = false;
     private final CountDownLatch stopped = new CountDownLatch(1);
@@ -43,11 +53,11 @@ outer:
                 do {
                     parked = true;
                     try {
-                        tick = q.poll();
-                        if (tick != null) {
-                            break;
-                        }
-                        // q.poll() == null -> engine[q.offer()] -> engine[feed.isParked() == true] -> engine[feed.unpark]
+//                        tick = q.poll();
+//                        if (tick != null) {
+//                            break;
+//                        }
+//                        // q.poll() == null -> engine[q.offer()] -> engine[feed.isParked() == true] -> engine[feed.unpark]
                         LockSupport.park();
                         continue outer;
                     } finally {

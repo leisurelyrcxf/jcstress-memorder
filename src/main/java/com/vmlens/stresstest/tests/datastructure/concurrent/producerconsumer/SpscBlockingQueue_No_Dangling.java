@@ -1,23 +1,18 @@
 package com.vmlens.stresstest.tests.datastructure.concurrent.producerconsumer;
 
-import org.openjdk.jcstress.annotations.Actor;
-import org.openjdk.jcstress.annotations.JCStressTest;
-import org.openjdk.jcstress.annotations.Outcome;
-import org.openjdk.jcstress.annotations.State;
+import org.openjdk.jcstress.annotations.*;
 import org.openjdk.jcstress.infra.results.I_Result;
 
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-import static org.openjdk.jcstress.annotations.Expect.ACCEPTABLE;
-import static org.openjdk.jcstress.annotations.Expect.FORBIDDEN;
+import static org.openjdk.jcstress.annotations.Expect.*;
 
 public class SpscBlockingQueue_No_Dangling {
 
-    /** @noinspection unused*/
-    @JCStressTest
-    @Outcome(id = {"0"}, expect = ACCEPTABLE, desc = "Gracefully finished")
-    @Outcome(expect = FORBIDDEN, desc = "Test is stuck")
+    @JCStressTest(Mode.Termination)
+    @Outcome(id = "TERMINATED", expect = ACCEPTABLE, desc = "Gracefully finished")
+    @Outcome(id = "STALE", expect = ACCEPTABLE_INTERESTING, desc = "Test is stuck")
     @State
     public static class Progress1 {
         private final MarketDataFeed marketDataFeed;
@@ -44,8 +39,8 @@ public class SpscBlockingQueue_No_Dangling {
             marketDataFeed.consume();
         }
 
-        @Actor
-        public void stop(I_Result r) {
+        @Signal
+        public void stop() {
             try {
                 Thread.sleep(0, 10);
             } catch (InterruptedException e) {
@@ -53,26 +48,21 @@ public class SpscBlockingQueue_No_Dangling {
             }
             marketDataEngine.stop();
             try {
-                marketDataFeed.waitStopped(10);
-                marketDataEngine.waitStopped(10);
+                marketDataFeed.waitStopped(2);
+                marketDataEngine.waitStopped(2);
             } catch (Exception e) {
-                r.r1 = -1;
-                return;
+                throw new IllegalStateException(e);
             }
 
             if (Math.abs(marketDataFeed.getMax() - marketDataEngine.getPrice()) > 1e-6) {
-                r.r1 = -1;
-                return;
+                throw new IllegalStateException();
             }
             if (Math.abs(marketDataFeed.getMin() - 100.0) > 1e-6) {
-                r.r1 = -1;
-                return;
+                throw new IllegalStateException();
             }
             if (Math.abs(marketDataFeed.getCurrent() - marketDataEngine.getPrice()) > 1e-6) {
-                r.r1 = -1;
-                return;
+                throw new IllegalStateException();
             }
-            r.r1 = 0;
         }
     }
 

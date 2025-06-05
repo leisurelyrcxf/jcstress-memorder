@@ -25,8 +25,6 @@
 package com.vmlens.stresstest.tests.datastructure.concurrent.map;
 
 import com.vmlens.stresstest.datastruct.concurrent.map.MyConcurrentHashMap;
-import lombok.AllArgsConstructor;
-import lombok.NoArgsConstructor;
 import org.openjdk.jcstress.annotations.Actor;
 import org.openjdk.jcstress.annotations.JCStressTest;
 import org.openjdk.jcstress.annotations.Outcome;
@@ -181,10 +179,12 @@ public class ConcurrentHashMap_SeqCst {
     @Outcome(expect = FORBIDDEN, desc = "Partial constructed object")
     @State
     public static class SynchronizedOpaqueDekker_PartialConstruction {
-        @NoArgsConstructor
-        @AllArgsConstructor
         static class Node {
             int val;
+
+            public Node(int val) {
+                this.val = val;
+            }
         }
 
         static final VarHandle VH_ARRAY = MethodHandles.arrayElementVarHandle(Node[].class);
@@ -219,10 +219,12 @@ public class ConcurrentHashMap_SeqCst {
     @Outcome(expect = FORBIDDEN, desc = "Partial constructed object")
     @State
     public static class SynchronizedAcqRelDekker_PartialConstruction_Impossible_AcqRel {
-        @NoArgsConstructor
-        @AllArgsConstructor
         static class Node {
             int val;
+
+            public Node(int val) {
+                this.val = val;
+            }
         }
 
         static final VarHandle VH_ARRAY = MethodHandles.arrayElementVarHandle(Node[].class);

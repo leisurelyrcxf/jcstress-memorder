@@ -1,7 +1,5 @@
 package com.vmlens.stresstest.tests.datastructure.concurrent.producerconsumer;
 
-import lombok.Getter;
-
 import java.util.Queue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -16,8 +14,11 @@ public class MarketDataEngine {
     private final MarketDataFeed feed;
     private final CountDownLatch stopped = new CountDownLatch(1);
     private volatile boolean shouldStop;
-    @Getter
     private double price;
+
+    public double getPrice() {
+        return price;
+    }
 
     @SuppressWarnings("AlibabaAvoidManuallyCreateThread")
     public MarketDataEngine(MarketDataFeed feed) {
