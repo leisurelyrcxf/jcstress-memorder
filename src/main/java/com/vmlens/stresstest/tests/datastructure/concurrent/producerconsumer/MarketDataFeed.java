@@ -53,11 +53,11 @@ outer:
                 do {
                     parked = true;
                     try {
-//                        tick = q.poll();
-//                        if (tick != null) {
-//                            break;
-//                        }
-//                        // q.poll() == null -> engine[q.offer()] -> engine[feed.isParked() == true] -> engine[feed.unpark]
+                        tick = q.poll();
+                        if (tick != null) {
+                            break;
+                        }
+                        // q.poll() == null -> engine[q.offer()] -> engine[feed.isParked() == true] -> engine[feed.unpark]
                         LockSupport.park();
                         continue outer;
                     } finally {
